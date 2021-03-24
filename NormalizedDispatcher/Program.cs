@@ -1,4 +1,5 @@
 ﻿using System;
+using NormalizedDispatcher.Shared;
 
 namespace NormalizedDispatcher
 {
@@ -6,7 +7,7 @@ namespace NormalizedDispatcher
     {
         static void Main(string[] args)
         {
-            Console.WriteLine("Hello World!");
+            
         }
     }
 }
