@@ -1,13 +1,16 @@
-﻿using System;
-using NormalizedDispatcher.Shared;
+﻿using NormalizedDispatcher.Core;
 
 namespace NormalizedDispatcher
 {
-    class Program
+    internal class Program
     {
-        static void Main(string[] args)
+        private static void Main(string[] args)
         {
-            
+            var data = new Loader().LoadHistoryFlowData();
+            var calculator = new Calculator();
+            const double n = 40.52*10000000;
+            var normal = calculator.Process(data, n);
+
         }
     }
 }
