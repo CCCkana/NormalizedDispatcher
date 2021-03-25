@@ -8,13 +8,13 @@ namespace NormalizedDispatcher.Core
 {
     public record StaticParameters
     {
+        public double HMax = 143;
+        public double HMin = 83.0;
         public double K = 8.6;
+        public double NormalFlow = 301.2;
         public double ZCommonMax = 780.0;
         public double ZFloodMax = 773.1;
         public double ZMin = 731.0;
-        public double HMin = 83.0;
-        public double HMax = 143;
-        public double NormalFlow = 301.2;
     }
 
     public class Loader
@@ -25,6 +25,11 @@ namespace NormalizedDispatcher.Core
         public Loader()
         {
             _data = Path.Combine(_root, "Data");
+        }
+
+        public string GetContentPath()
+        {
+            return _data;
         }
 
         public List<UpstreamWaterLevel> LoadUpstreamInfo()
@@ -64,13 +69,13 @@ namespace NormalizedDispatcher.Core
             foreach (var f in flows)
             {
                 const int delta = 10;
-                double value = f.Value; 
+                var value = f.Value;
                 var now = f.Date;
                 var next = now.AddDays(delta);
                 var nextNext = next.AddDays(delta);
                 result.Add(f);
-                result.Add(new FlowData(next,value));
-                result.Add(new FlowData(nextNext,value));
+                result.Add(new FlowData(next, value));
+                result.Add(new FlowData(nextNext, value));
             }
 
             return result;
@@ -79,29 +84,33 @@ namespace NormalizedDispatcher.Core
         private List<List<FlowData>> SplitIntoYears(List<FlowData> data)
         {
             List<List<FlowData>> result = new();
-            var upLimit = new DateTime(data[0].Date.Year+1,5,day:1);
-            var downLimit = upLimit.AddYears(1);
-            while (upLimit > data.Max(x => x.Date))
+            var upLimit = new DateTime(data[0].Date.Year + 1, 4, 1);
+            var downLimit = upLimit.AddYears(-1);
+            while (upLimit < data.Max(x => x.Date))
             {
                 var items = data
                     .Where(x => x.Date > downLimit && x.Date < upLimit)
                     .Select(x => x);
                 result.Add(items.ToList());
+                upLimit += new TimeSpan(365, 6, 0, 0);
+                downLimit = upLimit.AddYears(-1);
             }
+
             return result;
         }
+
         public List<FlowData> LoadDesignedFlowData()
         {
             using var reader = new StreamReader(Path.Combine(_data, "DESIGNED_FLOW.txt"));
             string line;
             var data = new List<FlowData>();
             while ((line = reader.ReadLine()) != null)
-                if (!Regex.IsMatch(line, @"\w*"))
-                {
-                    var a = line.Split("\t")[0];
-                    var b = line.Split("\t")[1];
-                    data.Add(new FlowData($"2020-{a}-01", b));
-                }
+            {
+                var a = line.Split("\t")[0];
+                var b = line.Split("\t")[1];
+                data.Add(new FlowData($"2020-{a}-01", b));
+            }
+
             return ReBaseFlowData(data);
         }
 
@@ -115,8 +124,10 @@ namespace NormalizedDispatcher.Core
                 var items = line.Split("\t");
                 var year = items[0];
                 for (var i = 1; i <= 12; i++)
-                    if (!Regex.IsMatch(line, @"\w*"))
-                        data.Add(new FlowData($"{year}-{i}-01", items[i]));
+                {
+                    var item = new FlowData($"{year}-{i}-01", items[i]);
+                    data.Add(item);
+                }
             }
 
             return SplitIntoYears(ReBaseFlowData(data));
@@ -167,7 +178,7 @@ namespace NormalizedDispatcher.Core
         }
 
         public class NMaxLimit
-        { 
+        {
             public double H;
             public double N;
 
